@@ -187,6 +187,10 @@
     }
 }
 
+- (void)updateConfigurationInBlocks {
+    [self.tableView reloadData];
+}
+
 #pragma mark - UITableView delegate
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
 {

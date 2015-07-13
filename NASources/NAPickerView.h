@@ -55,4 +55,7 @@ typedef void (^NACellUnHighlightConfigureBlock)(id);
 - (void)refreshWithItems:(NSArray*)items;
 // return the current selected Value
 - (id)selectedValue;
+
+- (void)updateConfigurationInBlocks;
+
 @end
