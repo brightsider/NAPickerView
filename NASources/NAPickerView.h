@@ -9,19 +9,21 @@
 #import <UIKit/UIKit.h>
 #import "NALabelCell.h"
 
+@class NAPickerView;
 @protocol NAPickerViewDelegate <NSObject>
 
 typedef void (^NACellConfigureBlock)(id, id);
 typedef void (^NACellHighlightConfigureBlock)(id);
 typedef void (^NACellUnHighlightConfigureBlock)(id);
 
-- (void)didSelectedAtIndexDel:(NSInteger)index;
+@optional
+- (void)pickerView:(NAPickerView *)pickerView didSelectedAtIndex:(NSInteger)index;
 
 @end
 
 @interface NAPickerView : UIView
 
-@property (weak, nonatomic) id delegate;
+@property (weak, nonatomic) IBOutlet id delegate;
 @property (assign, nonatomic) BOOL infiniteScrolling;
 @property (assign, nonatomic) BOOL onSound;
 @property (assign, nonatomic) BOOL showOverlay;
@@ -47,4 +49,10 @@ typedef void (^NACellUnHighlightConfigureBlock)(id);
 
 - (void)setIndex:(NSInteger)index;
 
+// return the current selected Index
+- (NSInteger)selectedIndex;
+// refresh with Items
+- (void)refreshWithItems:(NSArray*)items;
+// return the current selected Value
+- (id)selectedValue;
 @end

@@ -22,6 +22,18 @@
 @implementation NAPickerView
 @synthesize showOverlay = mShowOverlay;
 
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+    self = [super initWithCoder:coder];
+    if (self) {
+        [self configWithFrame:self.frame
+                     andItems:nil
+             andCellClassName:@"NALabelCell"
+                  andDelegate:nil];
+    }
+    return self;
+}
+
 - (id)initWithFrame:(CGRect)frame
            andItems:(NSArray *)items
    andCellClassName:(NSString *)className
@@ -63,6 +75,7 @@
     self.cellClassName = className;
     
     self.tableView = [[UITableView alloc] initWithFrame:self.bounds style:UITableViewStylePlain];
+    self.tableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
@@ -80,7 +93,7 @@
     
     self.configureBlock = ^(NALabelCell *cell, NSString *item) {
         [cell.textView setText:item];
-        cell.textView.textAlignment = UITextAlignmentCenter;
+        cell.textView.textAlignment = NSTextAlignmentCenter;
         cell.textView.font = [UIFont systemFontOfSize:30];
         cell.textView.backgroundColor = [UIColor clearColor];
         cell.textView.textColor = [UIColor grayColor];
@@ -93,6 +106,15 @@
     self.unhighlightBlock = ^(NALabelCell *cell) {
         cell.textView.textColor = [UIColor grayColor];
     };
+}
+
+-(void)refreshWithItems:(NSArray *)items{
+    _items = nil;
+    NSIndexPath *oldIndexPath = self.currentIndex;
+    self.items = [[NSMutableArray alloc] initWithArray:items];
+    [self.tableView reloadData];
+    NSInteger newIndex = MIN(oldIndexPath.row, self.items.count - 1);
+    self.index =  newIndex;
 }
 
 - (CGFloat)headerHeight
@@ -127,6 +149,18 @@
     [self.tableView scrollToRowAtIndexPath:self.currentIndex
                           atScrollPosition:UITableViewScrollPositionMiddle
                                   animated:NO];
+}
+
+- (NSInteger)selectedIndex{
+    return self.currentIndex.row;
+}
+
+- (id)selectedValue{
+    if(self.selectedIndex > (self.items.count - 1) ){
+        return nil;
+    }
+        
+    return self.items[self.selectedIndex];
 }
 
 - (void)setShowOverlay:(BOOL)showOverlay
@@ -223,17 +257,23 @@
     CGFloat floatVal = targetContentOffset->y / rowHeight;
 	NSInteger rounded = (NSInteger)(lround(floatVal));
 	targetContentOffset->y = rounded * rowHeight;
-    [self.delegate didSelectedAtIndexDel:rounded];
+    
+    if ([self.delegate  respondsToSelector:@selector(pickerView:didSelectedAtIndex:) ] ) {
+        [self.delegate pickerView:self didSelectedAtIndex:rounded];
+    }
 }
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView
 {
     NSArray *visibleIndex = [self.tableView indexPathsForVisibleRows];
+    if (visibleIndex.count == 0)
+        return;
+    
     NSArray *visibleIndexSorted = [visibleIndex sortedArrayUsingComparator:^NSComparisonResult(id a, id b){
         CGRect r1 = [self.tableView rectForRowAtIndexPath:(NSIndexPath *)a];
         CGRect r2 = [self.tableView rectForRowAtIndexPath:(NSIndexPath *)b];
-        CGFloat y1 = fabsf(r1.origin.y + r1.size.height/2 - self.tableView.contentOffset.y - self.tableView.center.y);
-        CGFloat y2 = fabsf(r2.origin.y + r2.size.height/2 - self.tableView.contentOffset.y - self.tableView.center.y);
+        CGFloat y1 = fabs(r1.origin.y + r1.size.height/2 - self.tableView.contentOffset.y - self.tableView.center.y);
+        CGFloat y2 = fabs(r2.origin.y + r2.size.height/2 - self.tableView.contentOffset.y - self.tableView.center.y);
         if (y1 > y2) {
             return NSOrderedDescending;
         }
@@ -249,9 +289,13 @@
     }
     
     NAPickerCell *currentCell = (NAPickerCell *)[self.tableView cellForRowAtIndexPath:self.currentIndex];
-    self.unhighlightBlock(currentCell);
+    if (currentCell) {
+        self.unhighlightBlock(currentCell);
+    }
     NAPickerCell *middleCell = (NAPickerCell *)[self.tableView cellForRowAtIndexPath:middleIndex];
-    self.highlightBlock(middleCell);
+    if(middleCell){
+        self.highlightBlock(middleCell);
+    }
     self.currentIndex = middleIndex;
 }
 
